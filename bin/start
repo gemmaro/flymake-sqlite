@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+make CC=gcc CFLAGS='-O0 -Wall -Wextra -fPIC -g'
+emacs --quick --directory "$PWD" --load "$PWD/bin/start.el"
