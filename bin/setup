@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+
+mkdir -p tmp
+sqlite3 tmp/database < fixtures/create_table.sql
