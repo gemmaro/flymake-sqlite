@@ -46,6 +46,8 @@ to the basic check with `make check`:
   error reporting.
 * Try to edit & save files.
 
+`tools/memo.c` is a C API playground.
+
 If you are using Guix and Direnv, run `direnv allow .` to install
 necessary packages.
 
