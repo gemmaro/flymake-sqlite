@@ -3,8 +3,10 @@
 ;; Copyright (C) 2026  gemmaro
 
 ;; Author: gemmaro <gemmaro.dev@gmail.com>
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "30.2") (flymake "1.4.5"))
 ;; Keywords: languages, sql, flymake
+;; URL: https://codeberg.org/gemmaro/flymake-sqlite
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by

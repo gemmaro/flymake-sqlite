@@ -2,11 +2,16 @@
 
 This is a Flymake backend for SQLite.
 
+Project links: [repository][cb], [mirror][gh]
+
 It can parse and check the SQL files; basically it checks the syntax
 and, if the database filename is specified, it checks whether tables
 and columns do exist or not.
 
 See also the commentary section and docstrings in the package file.
+
+[cb]: https://codeberg.org/gemmaro/flymake-sqlite
+[gh]: https://github.com/gemmaro/flymake-sqlite
 
 ## Install
 
