@@ -16,15 +16,10 @@
 CC      ?= cc
 CFLAGS  ?= -O2 -Wall -Wextra -fPIC
 
-SQLITE_LIBS   := -lsqlite3
-
-# dylib on macOS, I guess?
-EXT := so
-
-# and -dynamiclib on macOS?
-LDFLAGS := -shared
-
-MODULE := flymake-sqlite-module.$(EXT)
+SQLITE_LIBS := -lsqlite3
+EXT			:= $(shell emacs --batch --eval '(princ module-file-suffix)')
+LDFLAGS		:= -shared
+MODULE		:= flymake-sqlite-module$(EXT)
 
 all: $(MODULE)
 

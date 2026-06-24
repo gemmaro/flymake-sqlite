@@ -61,7 +61,7 @@ should be relative to the SQL file."
 
 (defcustom flymake-sqlite-module-path
   (expand-file-name
-   "flymake-sqlite-module.so"
+   (concat "flymake-sqlite-module" module-file-suffix)
    (file-name-directory load-file-name))
   "Built dynamic module file path for this package."
   :type '(file :tag "module filepath")
