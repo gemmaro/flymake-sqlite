@@ -101,13 +101,13 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
   if (nargs > 1 && !env->eq (env, dbfile_val, nil))
     dbfile = copy_emacs_string (env, dbfile_val, &dbfile_len);
 
-  int open_result;
+  int oresult;
   if (dbfile)
-    open_result = sqlite3_open_v2 (dbfile, &db, SQLITE_OPEN_READONLY, NULL);
+    oresult = sqlite3_open_v2 (dbfile, &db, SQLITE_OPEN_READONLY, NULL);
   else
-    open_result = sqlite3_open_v2 (
+    oresult = sqlite3_open_v2 (
         ":memory:", &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-  if (open_result != SQLITE_OK)
+  if (oresult != SQLITE_OK)
     goto failed_to_open;
 
   ptrdiff_t offset = 0;
@@ -117,29 +117,40 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
       const char *tail = NULL;
 
       /* Parse only and do not actually execute it. */
-      const int prepare_result = sqlite3_prepare_v2 (
-          db, sql + offset, sql_len - offset, &stmt, &tail);
-      if (prepare_result == SQLITE_OK)
+      const int presult = sqlite3_prepare_v2 (db, sql + offset,
+                                              sql_len - offset, &stmt, &tail);
+      if (presult == SQLITE_OK)
         sqlite3_finalize (stmt);
       else
         {
           const char *err_msg = sqlite3_errmsg (db);
           const int err_offset = sqlite3_error_offset (db);
-          const long codepoints
-              = err_offset < 0
-                    ? 0
-                    : offset + offset_to_codepoints (sql, err_offset);
-          emacs_value item = cons (env, env->make_integer (env, codepoints),
-                                   from_cstr (env, err_msg));
-          result = cons (env, item, result);
+          long beg, end;
+          if (err_offset < 0)
+            {
+              beg = offset;
+              if (tail)
+                end = tail - sql;
+              else
+                end = -1;
+            }
+          else
+            {
+              beg = offset + offset_to_codepoints (sql, err_offset);
+              end = beg + 1;
+            }
+          result = cons (env,
+                         cons (env, env->make_integer (env, beg),
+                               cons (env, env->make_integer (env, end),
+                                     from_cstr (env, err_msg))),
+                         result);
         }
 
       if (tail)
         {
-          const ptrdiff_t new_offset = tail - sql;
-          if (new_offset <= offset)
+          if (tail - sql <= offset)
             break;
-          offset = new_offset;
+          offset = tail - sql;
         }
       else
         break;
@@ -150,7 +161,7 @@ failed_to_open:
   {
     char msg[1 << 9];
     snprintf (msg, sizeof (msg), "failed to open database (filename=%s): %s",
-              dbfile, db ? sqlite3_errmsg (db) : sqlite3_errstr (open_result));
+              dbfile, db ? sqlite3_errmsg (db) : sqlite3_errstr (oresult));
     result = cons (env, env->make_integer (env, 0), from_cstr (env, msg));
   }
 
@@ -174,9 +185,11 @@ emacs_module_init (struct emacs_runtime *ert)
         "Check STRING with the SQLite parser.\n"
         "If DB-FILE is given, SQLite checks against the database.\n"
         "Otherwise it uses an empty in-memory database.\n"
-        "Return found errors as (OFFSET . MESSAGE) if any, or return nil.\n"
-        "Note that OFFSET here is number of Unicode codepoints offset based "
-        "on UTF-8.\n"
+        "Return found errors as (BEG . END . MESSAGE) if any, or return nil.\n"
+        "Note that BEG and END here are numbers of Unicode codepoints offset "
+        "based on UTF-8.\n"
+        "END can be negative if no error offset nor first byte of the end of "
+        "statement cannot be detected.\n"
         "\n(fn STRING &optional DB-FILE)",
         NULL)
   };

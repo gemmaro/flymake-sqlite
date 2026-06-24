@@ -90,10 +90,14 @@ The diagnostic results are passed to REPORT-FN."
   (or (require 'flymake-sqlite-module nil 'no-error)
       (flymake-sqlite--ensure-module))
   (funcall report-fn
-           (mapcar (pcase-lambda (`(,offset . ,message))
+           (mapcar (pcase-lambda (`(,beg . (,end . ,message)))
                      (let* ((source (current-buffer))
-                            (beg (+ (point-min)  offset))
-                            (end (min (1+ beg) (point-max))))
+                            (min (point-min))
+                            (max (point-max))
+                            (beg (+ min beg))
+                            (end (if (< end 0)
+                                     max
+                                   (min (+ min end) max))))
                        (flymake-make-diagnostic source beg end
                                                 :error message)))
                    (condition-case err
