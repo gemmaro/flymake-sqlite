@@ -124,9 +124,11 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
       else
         {
           const char *err_msg = sqlite3_errmsg (db);
-          const int err_offset = offset + sqlite3_error_offset (db);
+          const int err_offset = sqlite3_error_offset (db);
           const long codepoints
-              = err_offset < 0 ? 0 : offset_to_codepoints (sql, err_offset);
+              = err_offset < 0
+                    ? 0
+                    : offset + offset_to_codepoints (sql, err_offset);
           emacs_value item = cons (env, env->make_integer (env, codepoints),
                                    from_cstr (env, err_msg));
           result = cons (env, item, result);
