@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+make CC=gcc CFLAGS='-O0 -Wall -Wextra -fPIC -g'
+find fixtures -name '*.sql' \
+    | \
+    while read -r file
+    do
+        echo "[info] $file"
+        emacs --batch --directory "$PWD" --load "$PWD/bin/start.el" "$file"
+    done
