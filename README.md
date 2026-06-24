@@ -29,6 +29,10 @@ adjustments, so please refer to the `Makefile`.
 
 ## Change Log
 
+* 0.2.0 - 2026-06-25:
+  * Change: Try to use `require` first to load the module.
+  * Improve: error reporting range for logic errors.
+  * Improve: platform compatibility for dynamic module suffix (e.g. `.so`).
 * 0.1.0 - 2026-06-25: Initial release.
 
 ## Development
