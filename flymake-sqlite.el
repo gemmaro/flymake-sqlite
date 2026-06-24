@@ -37,8 +37,8 @@
 ;; Troubleshooting:
 ;;
 ;; * "Dynamic module not found" --- Please make sure you have compiled
-;;   the dynamic module and locate it under the
-;;   `flymake-sqlite-module-path'.
+;;   the dynamic module and locate it in your load path or the
+;;   specified `flymake-sqlite-module-path'.
 
 ;;; Code:
 
@@ -63,7 +63,9 @@ should be relative to the SQL file."
   (expand-file-name
    (concat "flymake-sqlite-module" module-file-suffix)
    (file-name-directory load-file-name))
-  "Built dynamic module file path for this package."
+  "Built dynamic module file path for this package.
+If you locate the dynamic module in your load path, this variable might
+not be necessary."
   :type '(file :tag "module filepath")
   :group 'flymake-sqlite)
 
@@ -85,7 +87,8 @@ should be relative to the SQL file."
 (defun flymake-sqlite-checker (report-fn &rest _args)
   "Flymake backend to check the SQL.
 The diagnostic results are passed to REPORT-FN."
-  (flymake-sqlite--ensure-module)
+  (or (require 'flymake-sqlite-module nil 'no-error)
+      (flymake-sqlite--ensure-module))
   (funcall report-fn
            (mapcar (pcase-lambda (`(,offset . ,message))
                      (let* ((source (current-buffer))
