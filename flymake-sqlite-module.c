@@ -18,6 +18,7 @@
 #include <emacs-module.h>
 #include <sqlite3.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -113,6 +114,27 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
   ptrdiff_t offset = 0;
   while (offset < sql_len)
     {
+      /* Skip whitespace as in SQLite Tokenizer Requirements[1].
+       *
+       * > One of these five characters: u0009, u000a, u000c, u000d, or u0020
+       *
+       * u0009 | \t
+       * u000a | \n
+       * u000c | \f
+       * u000d | \r
+       * u0020 | ' '
+       *
+       * [1] https://sqlite.org/draft/tokenreq.html
+       */
+      uint8_t c;
+      while ((c = *(sql + offset)))
+        {
+          if (c == '\t' || c == '\n' || c == '\f' || c == '\r' || c == ' ')
+            offset++;
+          else
+            break;
+        }
+
       sqlite3_stmt *stmt = NULL;
       const char *tail = NULL;
 
