@@ -29,6 +29,9 @@ adjustments, so please refer to the `Makefile`.
 
 ## Change Log
 
+* 0.2.1 - 2026-06-27:
+  * Fix: Trim whitespace at the beginning of reported ranges.
+  * Fix: Stop reporting when it encounters syntax error.  Continue otherwise.
 * 0.2.0 - 2026-06-25:
   * Change: Try to use `require` first to load the module.
   * Improve: error reporting range for logic errors.
