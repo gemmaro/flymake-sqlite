@@ -142,40 +142,39 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
       const int presult = sqlite3_prepare_v2 (db, sql + offset,
                                               sql_len - offset, &stmt, &tail);
       if (presult == SQLITE_OK)
-        sqlite3_finalize (stmt);
-      else
         {
-          const char *err_msg = sqlite3_errmsg (db);
-          const int err_offset = sqlite3_error_offset (db);
-          long beg, end;
-          if (err_offset < 0)
-            {
-              beg = offset;
-              if (tail)
-                end = tail - sql;
-              else
-                end = -1;
-            }
-          else
-            {
-              beg = offset + offset_to_codepoints (sql, err_offset);
-              end = beg + 1;
-            }
-          result = cons (env,
-                         cons (env, env->make_integer (env, beg),
-                               cons (env, env->make_integer (env, end),
-                                     from_cstr (env, err_msg))),
-                         result);
-        }
-
-      if (tail)
-        {
-          if (tail - sql <= offset)
-            break;
+          sqlite3_finalize (stmt);
           offset = tail - sql;
+          continue;
         }
-      else
-        break;
+      const char *err_msg = sqlite3_errmsg (db);
+      const int err_offset = sqlite3_error_offset (db);
+      long beg, end;
+      const bool is_logic_err = err_offset < 0;
+      if (is_logic_err)
+        {
+          beg = offset;
+          if (tail)
+            end = tail - sql;
+          else
+            end = -1;
+        }
+      else /* syntax error */
+        {
+          beg = offset + offset_to_codepoints (sql, err_offset);
+          end = beg + 1;
+        }
+      result = cons (env,
+                     cons (env, env->make_integer (env, beg),
+                           cons (env, env->make_integer (env, end),
+                                 from_cstr (env, err_msg))),
+                     result);
+      if (is_logic_err && tail)
+        {
+          offset = tail - sql;
+          continue;
+        }
+      break;
     }
   goto done;
 
