@@ -2,10 +2,17 @@
 set -eu
 
 make CC=gcc CFLAGS='-O0 -Wall -Wextra -fPIC -g'
+
+run_emacs() {
+    emacs --batch --directory "$PWD" --load "$PWD/bin/start.el" "$@"
+}
+
+run_emacs --load flymake-sqlite-test.el --funcall ert-run-tests-batch-and-exit
+
 find fixtures -name '*.sql' \
     | \
     while read -r file
     do
         echo "[info] $file"
-        emacs --batch --directory "$PWD" --load "$PWD/bin/start.el" "$file"
+        run_emacs "$file"
     done
