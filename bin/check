@@ -1,8 +1,6 @@
 #!/bin/sh
 set -eu
 
-make CC=gcc CFLAGS='-O0 -Wall -Wextra -fPIC -g'
-
 run_emacs() {
     emacs --batch --directory "$PWD" --load "$PWD/bin/start.el" "$@"
 }

@@ -28,7 +28,7 @@ $(MODULE): flymake-sqlite-module.c
 		-o $@ \
 		$< $(SQLITE_LIBS)
 
-check:
+check: $(MODULE)
 	./bin/check
 
 clean:
