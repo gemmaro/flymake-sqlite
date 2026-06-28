@@ -186,11 +186,13 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
           beg = offset + offset_to_codepoints (sql, err_offset);
           end = beg + 1;
         }
-      result = cons (env,
-                     cons (env, env->make_integer (env, beg),
-                           cons (env, env->make_integer (env, end),
-                                 from_cstr (env, err_msg))),
-                     result);
+      result = cons (
+          env,
+          cons (env, env->intern (env, is_logic_err ? ":warning" : ":error"),
+                cons (env, env->make_integer (env, beg),
+                      cons (env, env->make_integer (env, end),
+                            from_cstr (env, err_msg)))),
+          result);
       if (is_logic_err && tail)
         {
           offset = tail - sql;
@@ -219,9 +221,9 @@ emacs_module_init (struct emacs_runtime *ert)
         "Check STRING with the SQLite parser.\n"
         "If DB-FILE is given, SQLite checks against the database.\n"
         "Otherwise it uses an empty in-memory database.\n"
-        "Return found errors as (BEG . END . MESSAGE) if any, or return nil.\n"
-        "Note that BEG and END here are numbers of Unicode codepoints offset "
-        "based on UTF-8.\n"
+        "Return found errors as (TYPE . BEG . END . MESSAGE) if any, or "
+        "return nil.  Note that BEG and END here are numbers of Unicode "
+        "codepoints offset based on UTF-8.\n"
         "END can be negative if no error offset nor first byte of the end of "
         "statement cannot be detected.\n"
         "\n(fn STRING &optional DB-FILE)",

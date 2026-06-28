@@ -28,12 +28,12 @@
            (flymake-sqlite--check "SELECT * FROM do_not_exist;")
            ;;                      012345678901234567890123456
            ;;                                1         2
-           '((0 27 . "no such table: do_not_exist"))))
+           '((:warning 0 27 . "no such table: do_not_exist"))))
   (should (equal
            (flymake-sqlite--check "SELECT 1 +;")
            ;;                      01234567890
            ;;                                1
-           '((10 11 . "near \";\": syntax error"))))
+           '((:error 10 11 . "near \";\": syntax error"))))
   (should (equal
            ;;                                1         2
            ;;                      012345678901234567890123456
@@ -41,13 +41,13 @@
 SELECT ??;")
 ;;90123456
 ;; 3
-           '((35 36 . "near \"?\": syntax error"))))
+           '((:error 35 36 . "near \"?\": syntax error"))))
   (should (equal
            ;;                      0123456789
            (flymake-sqlite--check "SELECT 1;
 SELECT ??;")
 ;;23456789
-           '((18 19 . "near \"?\": syntax error"))))
+           '((:error 18 19 . "near \"?\": syntax error"))))
   (should (equal
            ;;                                1
            ;;                      01234567890
@@ -55,7 +55,7 @@ SELECT ??;")
 SELECT !!;")
 ;;34567890
 ;;       2
-           '((8 9 . "near \"?\": syntax error"))))
+           '((:error 8 9 . "near \"?\": syntax error"))))
   (should (equal
            ;;                                1         2         3         4         5
            ;;                      012345678901234567890123456789012345678901234567890123456789
@@ -63,8 +63,8 @@ SELECT !!;")
 INSERT INTO do_not_exist_2 VALUES (1, 'foo'), (2, 'bar');")
 ;;2345678901234567890123456789012345678901234567890123456
 ;;        7         8         9         0         1
-           '((60 117 . "no such table: do_not_exist_2")
-	         (0 59 . "no such table: do_not_exist_1")))))
+           '((:warning 60 117 . "no such table: do_not_exist_2")
+	         (:warning 0 59 . "no such table: do_not_exist_1")))))
 
 (provide 'flymake-sqlite-test)
 ;;; flymake-sqlite-test.el ends here
