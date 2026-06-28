@@ -17,6 +17,7 @@
 
 #include <emacs-module.h>
 #include <sqlite3.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -81,6 +82,52 @@ from_cstr (emacs_env *env, const char *str)
   return env->make_string (env, str, strlen (str));
 }
 
+/* Skip whitespace as in SQLite Tokenizer Requirements[1].
+ *
+ * > One of these five characters: u0009, u000a, u000c, u000d, or u0020
+ *
+ * u0009 | \t
+ * u000a | \n
+ * u000c | \f
+ * u000d | \r
+ * u0020 | ' '
+ *
+ * [1] https://sqlite.org/draft/tokenreq.html
+ */
+static void
+skip_spaces (const char str[], ptrdiff_t *offset)
+{
+  uint8_t c;
+  while ((c = str[*offset]))
+    {
+      if (c == '\t' || c == '\n' || c == '\f' || c == '\r' || c == ' ')
+        (*offset)++;
+      else
+        return;
+    }
+}
+
+static bool
+open_database (emacs_env *env, const char *dbfile, sqlite3 **db,
+               emacs_value *result)
+{
+  int oresult;
+  if (dbfile)
+    oresult = sqlite3_open_v2 (dbfile, db, SQLITE_OPEN_READONLY, NULL);
+  else
+    oresult = sqlite3_open_v2 (
+        ":memory:", db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+  if (oresult != SQLITE_OK)
+    {
+      char msg[1 << 9];
+      snprintf (msg, sizeof (msg), "failed to open database (filename=%s): %s",
+                dbfile, *db ? sqlite3_errmsg (*db) : sqlite3_errstr (oresult));
+      *result = cons (env, env->make_integer (env, 0), from_cstr (env, msg));
+      return false;
+    }
+  return true;
+}
+
 static emacs_value
 check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
 {
@@ -102,38 +149,13 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
   if (nargs > 1 && !env->eq (env, dbfile_val, nil))
     dbfile = copy_emacs_string (env, dbfile_val, &dbfile_len);
 
-  int oresult;
-  if (dbfile)
-    oresult = sqlite3_open_v2 (dbfile, &db, SQLITE_OPEN_READONLY, NULL);
-  else
-    oresult = sqlite3_open_v2 (
-        ":memory:", &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-  if (oresult != SQLITE_OK)
-    goto failed_to_open;
+  if (!open_database (env, dbfile, &db, &result))
+    goto done;
 
   ptrdiff_t offset = 0;
   while (offset < sql_len)
     {
-      /* Skip whitespace as in SQLite Tokenizer Requirements[1].
-       *
-       * > One of these five characters: u0009, u000a, u000c, u000d, or u0020
-       *
-       * u0009 | \t
-       * u000a | \n
-       * u000c | \f
-       * u000d | \r
-       * u0020 | ' '
-       *
-       * [1] https://sqlite.org/draft/tokenreq.html
-       */
-      uint8_t c;
-      while ((c = *(sql + offset)))
-        {
-          if (c == '\t' || c == '\n' || c == '\f' || c == '\r' || c == ' ')
-            offset++;
-          else
-            break;
-        }
+      skip_spaces (sql, &offset);
 
       sqlite3_stmt *stmt = NULL;
       const char *tail = NULL;
@@ -176,15 +198,6 @@ check (emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
         }
       break;
     }
-  goto done;
-
-failed_to_open:
-  {
-    char msg[1 << 9];
-    snprintf (msg, sizeof (msg), "failed to open database (filename=%s): %s",
-              dbfile, db ? sqlite3_errmsg (db) : sqlite3_errstr (oresult));
-    result = cons (env, env->make_integer (env, 0), from_cstr (env, msg));
-  }
 
 done:
   if (db)
